@@ -1,12 +1,12 @@
 <div align="center">
-    <img src=""><br>
+    <img src="https://github.com/Vanagand/CS-Data-Science-Build-Week-1/blob/master/img/header.png"><br>
 </div>
 
 # Naive Bayes Classifier
 
 [Article](https://medium.com/)
 
->A simple classifier based on **Bayes’ Theorem** that derives the probability of a prediction from the observed data. 
+A simple classifier based on **Bayes’ Theorem** that derives the probability of a prediction from the observed data. 
 
 ---
 
