@@ -4,7 +4,7 @@
 
 # Naive Bayes Classifier
 
-[Article](https://medium.com/)
+[Article](https://vanagand.github.io/2020-06-26-gaussian-bayes-theorem/)
 
 A simple classifier based on **Bayes’ Theorem** that derives the probability of a prediction from the observed data. 
 
