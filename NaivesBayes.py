@@ -123,12 +123,12 @@ class NaiveBayesClassifier():
                 self.len()
             ]
         """
-        summary = [(self.meanFunction(x), self.stdevFunction(x), len(x)) for x in zip(*self._data)]
+        summary = [(self.meanFunction(x), self.stdevFunction(x), len(x)) for x in zip(*data)]
         del(summary[-1])
         return summary
     @property
     def __datasummary__(self):
-        for row in self.dataSummary(data):
+        for row in self.dataSummary(self._data):
             print(row)
 
 
@@ -184,12 +184,12 @@ class NaiveBayesClassifier():
 
     def _predict(self, summary, vector):
         probability = self.classProbability(summary, vector)
-        bestLabel, bestProbability = None, -1
+        best_label, best_probability = None, -1
         for class_value, class_probability in probability.items():
-            if bestLabel is None or class_probability > bestProbability:
-                bestProbability = class_probability
-                bestLabel = class_value
-            return bestLabel
+            if best_label is None or class_probability > best_probability:
+                best_probability = class_probability
+                best_label = class_value
+        return best_label
 
 
 class GaussianNBmodel(NaiveBayesClassifier):
@@ -412,14 +412,14 @@ if __name__ == "__main__":
     # modelGaussianProbability = model.GaussianProbability(1.0, 2.0, 2.0)
     # print("{:.3f}".format(modelGaussianProbability))
     
-    #>>> Class Probability                                          #> Pending!
+    #>>> Class Probability                                             #> PASS!
     ##### self.classProbability() #####
     # classSummary = model.classSummary(dataIrisFull)
     # print(classSummary)
     # print(f"- instance test - ")
     # print("\n")
-    # classProbability = model.classProbability(classSummary, dataIrisFull[0])
-    # print(dataIrisFull[0])
+    # classProbability = model.classProbability(classSummary, dataIrisFull[-1])
+    # print(dataIrisFull[-1])
     # print(classProbability)
     # # print(f"\n- method test - ")
     # print("\n")
@@ -438,13 +438,13 @@ if __name__ == "__main__":
 
 
 
-    #### SCIKIT LEARN ####
+    #### MODEL FIT TESTING GROUND ####
     dataframeIris = pd.DataFrame(dataIrisFull)
     #Setup X and y data
     X_data = dataframeIris.iloc[:,0:4]
     y_labels = dataframeIris.iloc[:,4]
-    print(X_data)
-    print(y_labels)
+    # print(X_data)
+    # print(y_labels)
 
     # model._model(dataIrisFeature, dataIrisTarget)
     
