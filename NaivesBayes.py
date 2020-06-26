@@ -438,7 +438,7 @@ if __name__ == "__main__":
 
 
 
-    #### MODEL FIT TESTING GROUND ####
+    #### SCIKIT LEARN ####
     dataframeIris = pd.DataFrame(dataIrisFull)
     #Setup X and y data
     X_data = dataframeIris.iloc[:,0:4]
@@ -446,23 +446,23 @@ if __name__ == "__main__":
     # print(X_data)
     # print(y_labels)
 
-    model._model(dataIrisFeature, dataIrisTarget)
+    # model._model(dataIrisFeature, dataIrisTarget)
     
-    # modelFit = model.classSummary(dataIrisFull)
+    modelFit = model.classSummary(dataIrisFull)
     # targetTest = [[5,5,5,5],[5,5,5,5]]
-    modelClass = model._predict(modelFit, targetTest)
+    # modelClass = model._predict(modelFit, targetTest)
     print(model._predict(modelFit, [5.1,3.5,1.4,0.2]))
-    # print(model._predict(modelFit, [7.0,3.2,4.7,1.4]))
-    # print(model._predict(modelFit, [6.3,3.3,6.0,2.5]))
-    # print(model._predict(modelFit, [0,0,0,0]))
-    # print(model._predict(modelFit, [5,5,5,5]))
-    # print(model._predict(modelFit, [10,10,10,10]))
+    print(model._predict(modelFit, [7.0,3.2,4.7,1.4]))
+    print(model._predict(modelFit, [6.3,3.3,6.0,2.5]))
+    print(model._predict(modelFit, [0,0,0,0]))
+    print(model._predict(modelFit, [5,5,5,5]))
+    print(model._predict(modelFit, [10,10,10,10]))
 
     #Fit model
-    clf  = GaussianNB()
-    clf.fit(X_data,y_labels)
-    print(clf.predict([[5.1,3.5,1.4,0.2]]))
-    print(clf.score(X_data,y_labels))
+    # clf  = GaussianNB()
+    # clf.fit(X_data,y_labels)
+    # print(clf.predict([[5,5,5,5]]))
+    # print(clf.score(X_data,y_labels))
     
     # @_DEPRECIATED
     # @property
