@@ -3,6 +3,8 @@ import numpy as np
 from random import randint
 import collections
 import math
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
 
 
 # class Naive Bayes Classifier:
@@ -82,7 +84,7 @@ class NaiveBayesClassifier():
         return self.sqrtFunction(variance)
 
 
-    def classSeparate(self):
+    def classSeparate(self, data):
         """Creates a dictionary of feature class values.
         
         Request: data (internal list)
@@ -91,24 +93,24 @@ class NaiveBayesClassifier():
         Returns: var_classDictionary (dictionary)
             dictionary with class value as keys pair. 
         """
-        self.var_classDictionary = {}
-        for i in range(len(self.data)):
-            vector = self.data[i]
+        class_dictionary = {}
+        for i in range(len(data)):
+            vector = data[i]
             class_value = vector[-1]
-            if (class_value not in self.var_classDictionary):
-                self.var_classDictionary[class_value] = []
-            self.var_classDictionary[class_value].append(vector)
-        return self.var_classDictionary
+            if (class_value not in class_dictionary):
+                class_dictionary[class_value] = []
+            class_dictionary[class_value].append(vector)
+        return class_dictionary
     @property
     def __classdictionary__(self):
-        orderedDictclassSeparate = collections.OrderedDict(sorted(self.var_classDictionary.items()))
+        orderedDictclassSeparate = collections.OrderedDict(sorted(self.classSeparate().items()))
         for label, row in orderedDictclassSeparate.items():
             print("class {}".format(label))
             for array in row:
                 print("{}".format(array))
 
 
-    def dataSummary(self):
+    def dataSummary(self, data):
         """Creates a list summary of the mean, standard deviation, and lenght of 'n' features.
         
         Request: data (internal list)
@@ -121,16 +123,16 @@ class NaiveBayesClassifier():
                 self.len()
             ]
         """
-        self.var_dataSummary = [(self.meanFunction(x), self.stdevFunction(x), len(x)) for x in zip(*self._data)]
-        del(self.var_dataSummary[-1])
-        return self.var_dataSummary
+        summary = [(self.meanFunction(x), self.stdevFunction(x), len(x)) for x in zip(*self._data)]
+        del(summary[-1])
+        return summary
     @property
     def __datasummary__(self):
-        for row in self.var_dataSummary:
+        for row in self.dataSummary(data):
             print(row)
 
 
-    def classSummary(self):
+    def classSummary(self, data):
         """Creates a dictionary summary of the mean, standard deviation, and lenght of 'n' features.
         
         Support function.
@@ -138,10 +140,11 @@ class NaiveBayesClassifier():
         Returns: var_classSummary (dictionary)
             dictionary summary with class value as keys pair. 
         """
-        self.var_classSummary = {}
-        for class_value, class_feature in self.classSeparate().items():
-            self.var_classSummary[class_value] = self.dataSummary()
-        return self.var_classSummary
+        class_dictionary = self.classSeparate(data)
+        summary = {}
+        for class_value, class_feature in class_dictionary.items():
+            summary[class_value] = self.dataSummary(class_feature)
+        return summary
     @property
     def __classsummary__(self):
         orderedDictclassSummary = collections.OrderedDict(sorted(classSummary.items()))
@@ -162,15 +165,34 @@ class NaiveBayesClassifier():
         """
         numRows = sum([summary[label][0][2] for label in summary])
         probability = {}
-        for class_value, class_summaries in summary.items():
+        for class_value, class_summary in summary.items():
             probability[class_value] = summary[class_value][0][2]/float(numRows)
-            for i in range(len(class_summaries)):
-                mean, stdev, _ = class_summaries[i]
+            for i in range(len(class_summary)):
+                mean, stdev, _ = class_summary[i]
                 probability[class_value] *= self.GaussianProbability(vector[i], mean, stdev)
         return probability
 
 
-class GaussianNB(NaiveBayesClassifier):
+    def _model(self, train, test):
+        summary = self.classSummary(train)
+        prediction = []
+        for row in test:
+            output = self._predict(summary, row)
+            prediction.append(output)
+        return(prediction)
+
+
+    def _predict(self, summary, vector):
+        probability = self.classProbability(summary, vector)
+        bestLabel, bestProbability = None, -1
+        for class_value, class_probability in probability.items():
+            if bestLabel is None or class_probability > bestProbability:
+                bestProbability = class_probability
+                bestLabel = class_value
+            return bestLabel
+
+
+class GaussianNBmodel(NaiveBayesClassifier):
     def __init__(self, data):
         self.data = data
         self._model_info = "A naive model based on Bayes’ Theorem capable of handling continuous data." \
@@ -247,157 +269,71 @@ def main():
 
 
 if __name__ == "__main__":
-    dataIris = [
-        [5.1,3.5,1.4,0.2,0],
-        [4.9,3.0,1.4,0.2,0],
-        [4.7,3.2,1.3,0.2,0],
-        [4.6,3.1,1.5,0.2,0],
-        [5.0,3.6,1.4,0.2,0],
-        [5.4,3.9,1.7,0.4,0],
-        [4.6,3.4,1.4,0.3,0],
-        [5.0,3.4,1.5,0.2,0],
-        [4.4,2.9,1.4,0.2,0],
-        [4.9,3.1,1.5,0.1,0],
-        [5.4,3.7,1.5,0.2,0],
-        [4.8,3.4,1.6,0.2,0],
-        [4.8,3.0,1.4,0.1,0],
-        [4.3,3.0,1.1,0.1,0],
-        [5.8,4.0,1.2,0.2,0],
-        [5.7,4.4,1.5,0.4,0],
-        [5.4,3.9,1.3,0.4,0],
-        [5.1,3.5,1.4,0.3,0],
-        [5.7,3.8,1.7,0.3,0],
-        [5.1,3.8,1.5,0.3,0],
-        [5.4,3.4,1.7,0.2,0],
-        [5.1,3.7,1.5,0.4,0],
-        [4.6,3.6,1.0,0.2,0],
-        [5.1,3.3,1.7,0.5,0],
-        [4.8,3.4,1.9,0.2,0],
-        [5.0,3.0,1.6,0.2,0],
-        [5.0,3.4,1.6,0.4,0],
-        [5.2,3.5,1.5,0.2,0],
-        [5.2,3.4,1.4,0.2,0],
-        [4.7,3.2,1.6,0.2,0],
-        [4.8,3.1,1.6,0.2,0],
-        [5.4,3.4,1.5,0.4,0],
-        [5.2,4.1,1.5,0.1,0],
-        [5.5,4.2,1.4,0.2,0],
-        [4.9,3.1,1.5,0.1,0],
-        [5.0,3.2,1.2,0.2,0],
-        [5.5,3.5,1.3,0.2,0],
-        [4.9,3.1,1.5,0.1,0],
-        [4.4,3.0,1.3,0.2,0],
-        [5.1,3.4,1.5,0.2,0],
-        [5.0,3.5,1.3,0.3,0],
-        [4.5,2.3,1.3,0.3,0],
-        [4.4,3.2,1.3,0.2,0],
-        [5.0,3.5,1.6,0.6,0],
-        [5.1,3.8,1.9,0.4,0],
-        [4.8,3.0,1.4,0.3,0],
-        [5.1,3.8,1.6,0.2,0],
-        [4.6,3.2,1.4,0.2,0],
-        [5.3,3.7,1.5,0.2,0],
-        [5.0,3.3,1.4,0.2,0],
-        [7.0,3.2,4.7,1.4,1],
-        [6.4,3.2,4.5,1.5,1],
-        [6.9,3.1,4.9,1.5,1],
-        [5.5,2.3,4.0,1.3,1],
-        [6.5,2.8,4.6,1.5,1],
-        [5.7,2.8,4.5,1.3,1],
-        [6.3,3.3,4.7,1.6,1],
-        [4.9,2.4,3.3,1.0,1],
-        [6.6,2.9,4.6,1.3,1],
-        [5.2,2.7,3.9,1.4,1],
-        [5.0,2.0,3.5,1.0,1],
-        [5.9,3.0,4.2,1.5,1],
-        [6.0,2.2,4.0,1.0,1],
-        [6.1,2.9,4.7,1.4,1],
-        [5.6,2.9,3.6,1.3,1],
-        [6.7,3.1,4.4,1.4,1],
-        [5.6,3.0,4.5,1.5,1],
-        [5.8,2.7,4.1,1.0,1],
-        [6.2,2.2,4.5,1.5,1],
-        [5.6,2.5,3.9,1.1,1],
-        [5.9,3.2,4.8,1.8,1],
-        [6.1,2.8,4.0,1.3,1],
-        [6.3,2.5,4.9,1.5,1],
-        [6.1,2.8,4.7,1.2,1],
-        [6.4,2.9,4.3,1.3,1],
-        [6.6,3.0,4.4,1.4,1],
-        [6.8,2.8,4.8,1.4,1],
-        [6.7,3.0,5.0,1.7,1],
-        [6.0,2.9,4.5,1.5,1],
-        [5.7,2.6,3.5,1.0,1],
-        [5.5,2.4,3.8,1.1,1],
-        [5.5,2.4,3.7,1.0,1],
-        [5.8,2.7,3.9,1.2,1],
-        [6.0,2.7,5.1,1.6,1],
-        [5.4,3.0,4.5,1.5,1],
-        [6.0,3.4,4.5,1.6,1],
-        [6.7,3.1,4.7,1.5,1],
-        [6.3,2.3,4.4,1.3,1],
-        [5.6,3.0,4.1,1.3,1],
-        [5.5,2.5,4.0,1.3,1],
-        [5.5,2.6,4.4,1.2,1],
-        [6.1,3.0,4.6,1.4,1],
-        [5.8,2.6,4.0,1.2,1],
-        [5.0,2.3,3.3,1.0,1],
-        [5.6,2.7,4.2,1.3,1],
-        [5.7,3.0,4.2,1.2,1],
-        [5.7,2.9,4.2,1.3,1],
-        [6.2,2.9,4.3,1.3,1],
-        [5.1,2.5,3.0,1.1,1],
-        [5.7,2.8,4.1,1.3,1],
-        [6.3,3.3,6.0,2.5,2],
-        [5.8,2.7,5.1,1.9,2],
-        [7.1,3.0,5.9,2.1,2],
-        [6.3,2.9,5.6,1.8,2],
-        [6.5,3.0,5.8,2.2,2],
-        [7.6,3.0,6.6,2.1,2],
-        [4.9,2.5,4.5,1.7,2],
-        [7.3,2.9,6.3,1.8,2],
-        [6.7,2.5,5.8,1.8,2],
-        [7.2,3.6,6.1,2.5,2],
-        [6.5,3.2,5.1,2.0,2],
-        [6.4,2.7,5.3,1.9,2],
-        [6.8,3.0,5.5,2.1,2],
-        [5.7,2.5,5.0,2.0,2],
-        [5.8,2.8,5.1,2.4,2],
-        [6.4,3.2,5.3,2.3,2],
-        [6.5,3.0,5.5,1.8,2],
-        [7.7,3.8,6.7,2.2,2],
-        [7.7,2.6,6.9,2.3,2],
-        [6.0,2.2,5.0,1.5,2],
-        [6.9,3.2,5.7,2.3,2],
-        [5.6,2.8,4.9,2.0,2],
-        [7.7,2.8,6.7,2.0,2],
-        [6.3,2.7,4.9,1.8,2],
-        [6.7,3.3,5.7,2.1,2],
-        [7.2,3.2,6.0,1.8,2],
-        [6.2,2.8,4.8,1.8,2],
-        [6.1,3.0,4.9,1.8,2],
-        [6.4,2.8,5.6,2.1,2],
-        [7.2,3.0,5.8,1.6,2],
-        [7.4,2.8,6.1,1.9,2],
-        [7.9,3.8,6.4,2.0,2],
-        [6.4,2.8,5.6,2.2,2],
-        [6.3,2.8,5.1,1.5,2],
-        [6.1,2.6,5.6,1.4,2],
-        [7.7,3.0,6.1,2.3,2],
-        [6.3,3.4,5.6,2.4,2],
-        [6.4,3.1,5.5,1.8,2],
-        [6.0,3.0,4.8,1.8,2],
-        [6.9,3.1,5.4,2.1,2],
-        [6.7,3.1,5.6,2.4,2],
-        [6.9,3.1,5.1,2.3,2],
-        [5.8,2.7,5.1,1.9,2],
-        [6.8,3.2,5.9,2.3,2],
-        [6.7,3.3,5.7,2.5,2],
-        [6.7,3.0,5.2,2.3,2],
-        [6.3,2.5,5.0,1.9,2],
-        [6.5,3.0,5.2,2.0,2],
-        [6.2,3.4,5.4,2.3,2],
-        [5.9,3.0,5.1,1.8,2]
+    dataIrisFull = [[5.1,3.5,1.4,0.2,0], [4.9,3.0,1.4,0.2,0], [4.7,3.2,1.3,0.2,0], [4.6,3.1,1.5,0.2,0], [5.0,3.6,1.4,0.2,0],
+        [5.4,3.9,1.7,0.4,0], [4.6,3.4,1.4,0.3,0], [5.0,3.4,1.5,0.2,0], [4.4,2.9,1.4,0.2,0], [4.9,3.1,1.5,0.1,0],
+        [5.4,3.7,1.5,0.2,0], [4.8,3.4,1.6,0.2,0], [4.8,3.0,1.4,0.1,0], [4.3,3.0,1.1,0.1,0], [5.8,4.0,1.2,0.2,0],
+        [5.7,4.4,1.5,0.4,0], [5.4,3.9,1.3,0.4,0], [5.1,3.5,1.4,0.3,0], [5.7,3.8,1.7,0.3,0], [5.1,3.8,1.5,0.3,0],
+        [5.4,3.4,1.7,0.2,0], [5.1,3.7,1.5,0.4,0], [4.6,3.6,1.0,0.2,0], [5.1,3.3,1.7,0.5,0], [4.8,3.4,1.9,0.2,0],
+        [5.0,3.0,1.6,0.2,0], [5.0,3.4,1.6,0.4,0], [5.2,3.5,1.5,0.2,0], [5.2,3.4,1.4,0.2,0], [4.7,3.2,1.6,0.2,0],
+        [4.8,3.1,1.6,0.2,0], [5.4,3.4,1.5,0.4,0], [5.2,4.1,1.5,0.1,0], [5.5,4.2,1.4,0.2,0], [4.9,3.1,1.5,0.1,0],
+        [5.0,3.2,1.2,0.2,0], [5.5,3.5,1.3,0.2,0], [4.9,3.1,1.5,0.1,0], [4.4,3.0,1.3,0.2,0], [5.1,3.4,1.5,0.2,0],
+        [5.0,3.5,1.3,0.3,0], [4.5,2.3,1.3,0.3,0], [4.4,3.2,1.3,0.2,0], [5.0,3.5,1.6,0.6,0], [5.1,3.8,1.9,0.4,0],
+        [4.8,3.0,1.4,0.3,0], [5.1,3.8,1.6,0.2,0], [4.6,3.2,1.4,0.2,0], [5.3,3.7,1.5,0.2,0], [5.0,3.3,1.4,0.2,0],
+        [7.0,3.2,4.7,1.4,1], [6.4,3.2,4.5,1.5,1], [6.9,3.1,4.9,1.5,1], [5.5,2.3,4.0,1.3,1], [6.5,2.8,4.6,1.5,1],
+        [5.7,2.8,4.5,1.3,1], [6.3,3.3,4.7,1.6,1], [4.9,2.4,3.3,1.0,1], [6.6,2.9,4.6,1.3,1], [5.2,2.7,3.9,1.4,1],
+        [5.0,2.0,3.5,1.0,1], [5.9,3.0,4.2,1.5,1], [6.0,2.2,4.0,1.0,1], [6.1,2.9,4.7,1.4,1], [5.6,2.9,3.6,1.3,1],
+        [6.7,3.1,4.4,1.4,1], [5.6,3.0,4.5,1.5,1], [5.8,2.7,4.1,1.0,1], [6.2,2.2,4.5,1.5,1], [5.6,2.5,3.9,1.1,1],
+        [5.9,3.2,4.8,1.8,1], [6.1,2.8,4.0,1.3,1], [6.3,2.5,4.9,1.5,1], [6.1,2.8,4.7,1.2,1], [6.4,2.9,4.3,1.3,1],
+        [6.6,3.0,4.4,1.4,1], [6.8,2.8,4.8,1.4,1], [6.7,3.0,5.0,1.7,1], [6.0,2.9,4.5,1.5,1], [5.7,2.6,3.5,1.0,1],
+        [5.5,2.4,3.8,1.1,1], [5.5,2.4,3.7,1.0,1], [5.8,2.7,3.9,1.2,1], [6.0,2.7,5.1,1.6,1], [5.4,3.0,4.5,1.5,1],
+        [6.0,3.4,4.5,1.6,1], [6.7,3.1,4.7,1.5,1], [6.3,2.3,4.4,1.3,1], [5.6,3.0,4.1,1.3,1], [5.5,2.5,4.0,1.3,1],
+        [5.5,2.6,4.4,1.2,1], [6.1,3.0,4.6,1.4,1], [5.8,2.6,4.0,1.2,1], [5.0,2.3,3.3,1.0,1], [5.6,2.7,4.2,1.3,1],
+        [5.7,3.0,4.2,1.2,1], [5.7,2.9,4.2,1.3,1], [6.2,2.9,4.3,1.3,1], [5.1,2.5,3.0,1.1,1], [5.7,2.8,4.1,1.3,1],
+        [6.3,3.3,6.0,2.5,2], [5.8,2.7,5.1,1.9,2], [7.1,3.0,5.9,2.1,2], [6.3,2.9,5.6,1.8,2], [6.5,3.0,5.8,2.2,2],
+        [7.6,3.0,6.6,2.1,2], [4.9,2.5,4.5,1.7,2], [7.3,2.9,6.3,1.8,2], [6.7,2.5,5.8,1.8,2], [7.2,3.6,6.1,2.5,2],
+        [6.5,3.2,5.1,2.0,2], [6.4,2.7,5.3,1.9,2], [6.8,3.0,5.5,2.1,2], [5.7,2.5,5.0,2.0,2], [5.8,2.8,5.1,2.4,2],
+        [6.4,3.2,5.3,2.3,2], [6.5,3.0,5.5,1.8,2], [7.7,3.8,6.7,2.2,2], [7.7,2.6,6.9,2.3,2], [6.0,2.2,5.0,1.5,2],
+        [6.9,3.2,5.7,2.3,2], [5.6,2.8,4.9,2.0,2], [7.7,2.8,6.7,2.0,2], [6.3,2.7,4.9,1.8,2], [6.7,3.3,5.7,2.1,2],
+        [7.2,3.2,6.0,1.8,2], [6.2,2.8,4.8,1.8,2], [6.1,3.0,4.9,1.8,2], [6.4,2.8,5.6,2.1,2], [7.2,3.0,5.8,1.6,2],
+        [7.4,2.8,6.1,1.9,2], [7.9,3.8,6.4,2.0,2], [6.4,2.8,5.6,2.2,2], [6.3,2.8,5.1,1.5,2], [6.1,2.6,5.6,1.4,2],
+        [7.7,3.0,6.1,2.3,2], [6.3,3.4,5.6,2.4,2], [6.4,3.1,5.5,1.8,2], [6.0,3.0,4.8,1.8,2], [6.9,3.1,5.4,2.1,2],
+        [6.7,3.1,5.6,2.4,2], [6.9,3.1,5.1,2.3,2], [5.8,2.7,5.1,1.9,2], [6.8,3.2,5.9,2.3,2], [6.7,3.3,5.7,2.5,2],
+        [6.7,3.0,5.2,2.3,2], [6.3,2.5,5.0,1.9,2], [6.5,3.0,5.2,2.0,2], [6.2,3.4,5.4,2.3,2], [5.9,3.0,5.1,1.8,2]
+    ]
+    dataIrisFeature = [ [5.1,3.5,1.4,0.2], [4.9,3.0,1.4,0.2], [4.7,3.2,1.3,0.2], [4.6,3.1,1.5,0.2], [5.0,3.6,1.4,0.2], 
+        [5.4,3.9,1.7,0.4], [4.6,3.4,1.4,0.3], [5.0,3.4,1.5,0.2], [4.4,2.9,1.4,0.2], [4.9,3.1,1.5,0.1], [5.4,3.7,1.5,0.2],
+        [4.8,3.4,1.6,0.2], [4.8,3.0,1.4,0.1], [4.3,3.0,1.1,0.1], [5.8,4.0,1.2,0.2], [5.7,4.4,1.5,0.4], [5.4,3.9,1.3,0.4],
+        [5.1,3.5,1.4,0.3], [5.7,3.8,1.7,0.3], [5.1,3.8,1.5,0.3], [5.4,3.4,1.7,0.2], [5.1,3.7,1.5,0.4], [4.6,3.6,1.0,0.2],
+        [5.1,3.3,1.7,0.5], [4.8,3.4,1.9,0.2], [5.0,3.0,1.6,0.2], [5.0,3.4,1.6,0.4], [5.2,3.5,1.5,0.2], [5.2,3.4,1.4,0.2],
+        [4.7,3.2,1.6,0.2], [4.8,3.1,1.6,0.2], [5.4,3.4,1.5,0.4], [5.2,4.1,1.5,0.1], [5.5,4.2,1.4,0.2], [4.9,3.1,1.5,0.1],
+        [5.0,3.2,1.2,0.2], [5.5,3.5,1.3,0.2], [4.9,3.1,1.5,0.1], [4.4,3.0,1.3,0.2], [5.1,3.4,1.5,0.2], [5.0,3.5,1.3,0.3],
+        [4.5,2.3,1.3,0.3], [4.4,3.2,1.3,0.2], [5.0,3.5,1.6,0.6], [5.1,3.8,1.9,0.4], [4.8,3.0,1.4,0.3], [5.1,3.8,1.6,0.2],
+        [4.6,3.2,1.4,0.2], [5.3,3.7,1.5,0.2], [5.0,3.3,1.4,0.2], [7.0,3.2,4.7,1.4], [6.4,3.2,4.5,1.5], [6.9,3.1,4.9,1.5],
+        [5.5,2.3,4.0,1.3], [6.5,2.8,4.6,1.5], [5.7,2.8,4.5,1.3], [6.3,3.3,4.7,1.6], [4.9,2.4,3.3,1.0], [6.6,2.9,4.6,1.3],
+        [5.2,2.7,3.9,1.4], [5.0,2.0,3.5,1.0], [5.9,3.0,4.2,1.5], [6.0,2.2,4.0,1.0], [6.1,2.9,4.7,1.4], [5.6,2.9,3.6,1.3],
+        [6.7,3.1,4.4,1.4], [5.6,3.0,4.5,1.5], [5.8,2.7,4.1,1.0], [6.2,2.2,4.5,1.5], [5.6,2.5,3.9,1.1], [5.9,3.2,4.8,1.8],
+        [6.1,2.8,4.0,1.3], [6.3,2.5,4.9,1.5], [6.1,2.8,4.7,1.2], [6.4,2.9,4.3,1.3], [6.6,3.0,4.4,1.4], [6.8,2.8,4.8,1.4],
+        [6.7,3.0,5.0,1.7], [6.0,2.9,4.5,1.5], [5.7,2.6,3.5,1.0], [5.5,2.4,3.8,1.1], [5.5,2.4,3.7,1.0], [5.8,2.7,3.9,1.2],
+        [6.0,2.7,5.1,1.6], [5.4,3.0,4.5,1.5], [6.0,3.4,4.5,1.6], [6.7,3.1,4.7,1.5], [6.3,2.3,4.4,1.3], [5.6,3.0,4.1,1.3],
+        [5.5,2.5,4.0,1.3], [5.5,2.6,4.4,1.2], [6.1,3.0,4.6,1.4], [5.8,2.6,4.0,1.2], [5.0,2.3,3.3,1.0], [5.6,2.7,4.2,1.3],
+        [5.7,3.0,4.2,1.2], [5.7,2.9,4.2,1.3], [6.2,2.9,4.3,1.3], [5.1,2.5,3.0,1.1], [5.7,2.8,4.1,1.3], [6.3,3.3,6.0,2.5],
+        [5.8,2.7,5.1,1.9], [7.1,3.0,5.9,2.1], [6.3,2.9,5.6,1.8], [6.5,3.0,5.8,2.2], [7.6,3.0,6.6,2.1], [4.9,2.5,4.5,1.7],
+        [7.3,2.9,6.3,1.8], [6.7,2.5,5.8,1.8], [7.2,3.6,6.1,2.5], [6.5,3.2,5.1,2.0], [6.4,2.7,5.3,1.9], [6.8,3.0,5.5,2.1],
+        [5.7,2.5,5.0,2.0], [5.8,2.8,5.1,2.4], [6.4,3.2,5.3,2.3], [6.5,3.0,5.5,1.8], [7.7,3.8,6.7,2.2], [7.7,2.6,6.9,2.3],
+        [6.0,2.2,5.0,1.5], [6.9,3.2,5.7,2.3], [5.6,2.8,4.9,2.0], [7.7,2.8,6.7,2.0], [6.3,2.7,4.9,1.8], [6.7,3.3,5.7,2.1],
+        [7.2,3.2,6.0,1.8], [6.2,2.8,4.8,1.8], [6.1,3.0,4.9,1.8], [6.4,2.8,5.6,2.1], [7.2,3.0,5.8,1.6], [7.4,2.8,6.1,1.9],
+        [7.9,3.8,6.4,2.0], [6.4,2.8,5.6,2.2], [6.3,2.8,5.1,1.5], [6.1,2.6,5.6,1.4], [7.7,3.0,6.1,2.3], [6.3,3.4,5.6,2.4],
+        [6.4,3.1,5.5,1.8], [6.0,3.0,4.8,1.8], [6.9,3.1,5.4,2.1], [6.7,3.1,5.6,2.4], [6.9,3.1,5.1,2.3], [5.8,2.7,5.1,1.9],
+        [6.8,3.2,5.9,2.3], [6.7,3.3,5.7,2.5], [6.7,3.0,5.2,2.3], [6.3,2.5,5.0,1.9], [6.5,3.0,5.2,2.0], [6.2,3.4,5.4,2.3],
+        [5.9,3.0,5.1,1.8]
+    ]
+    dataIrisTarget = [ [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0],
+        [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0],
+        [0], [0], [0], [0], [0], [0], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1],
+        [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1],
+        [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [2], [2], [2], [2], [2], [2], [2],
+        [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2],
+        [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2]
     ]
     dataIris_test = [
         [5.1,3.5,1.4,0.2],
@@ -405,17 +341,17 @@ if __name__ == "__main__":
         [6.3,3.3,6.0,2.5],
     ]
     
-    model = GaussianNB(dataIris)
+    model = GaussianNBmodel(dataIrisFull)
     mathInt = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     
     # Function test!
     #>>> Data Handling 
     ##### self.classSeparate() #####                                   #> PASS!
     # print(f"- instance test - ")
-    # classSeperate = model.classSeparate()
+    # classSeperate = model.classSeparate(dataIrisFull)
     # print(classSeperate)
     # print(f"\n- method test - ")
-    # print(model.classSeparate())
+    # print(model.classSeparate(dataIrisFull))
     # print(f"\n- sort - ")
     # orderedDictclassSeparate = collections.OrderedDict(sorted(classSeperate.items()))
     # for label, row in orderedDictclassSeparate.items():
@@ -438,10 +374,10 @@ if __name__ == "__main__":
     
     ##### self.dataSummary() #####                                     #> PASS!
     # print(f"- instance test-  ")
-    # dataSummary = model.dataSummary()
+    # dataSummary = model.dataSummary(dataIrisFull)
     # print(dataSummary)
     # print(f"\n- method test - ")
-    # print(model.dataSummary())
+    # print(model.dataSummary(dataIrisFull))
     # print(f"\n- sort - ")
     # for row in dataSummary:
     #     print(row)
@@ -451,11 +387,11 @@ if __name__ == "__main__":
     #>>> Class Summary
     ##### self.classSummary() #####                                    #> PASS!
     # print(f"- instance test - ")
-    # classSummary = model.classSummary()
+    # classSummary = model.classSummary(dataIrisFull)
     # print(classSummary)
     # print(f"\n- method test - ")
-    # print(model.classSummary())
-    # # print(f"\n- sort - ")
+    # print(model.classSummary(dataIrisFull))
+    # print(f"\n- sort - ")
     # orderedDictclassSummary = collections.OrderedDict(sorted(classSummary.items()))
     # for label, row in orderedDictclassSummary.items():
     #     print("class {}".format(label))
@@ -478,14 +414,56 @@ if __name__ == "__main__":
     
     #>>> Class Probability                                          #> Pending!
     ##### self.classProbability() #####
-    classSummary = model.classSummary()
-    print(f"- instance test - ")
-    classProbability = model.classProbability(classSummary, dataIris[100])
-    print(classProbability)
-    print(f"\n- method test - ")
-    print(model.classProbability(classSummary, dataIris[0]))
+    # classSummary = model.classSummary(dataIrisFull)
+    # print(classSummary)
+    # print(f"- instance test - ")
+    # print("\n")
+    # classProbability = model.classProbability(classSummary, dataIrisFull[0])
+    # print(dataIrisFull[0])
+    # print(classProbability)
+    # # print(f"\n- method test - ")
+    # print("\n")
+    # print(dataIrisFull[1])
+    # print(model.classProbability(classSummary, dataIrisFull[1]))
 
 
+
+
+
+
+
+
+
+
+
+
+
+    #### SCIKIT LEARN ####
+    dataframeIris = pd.DataFrame(dataIrisFull)
+    #Setup X and y data
+    X_data = dataframeIris.iloc[:,0:4]
+    y_labels = dataframeIris.iloc[:,4]
+    print(X_data)
+    print(y_labels)
+
+    # model._model(dataIrisFeature, dataIrisTarget)
+    
+    modelFit = model.classSummary(dataIrisFull)
+    # targetTest = [[5,5,5,5],[5,5,5,5]]
+    # modelClass = model._predict(modelFit, targetTest)
+    print(model._predict(modelFit, [5.1,3.5,1.4,0.2]))
+    print(model._predict(modelFit, [7.0,3.2,4.7,1.4]))
+    print(model._predict(modelFit, [6.3,3.3,6.0,2.5]))
+    print(model._predict(modelFit, [0,0,0,0]))
+    print(model._predict(modelFit, [5,5,5,5]))
+    print(model._predict(modelFit, [10,10,10,10]))
+
+    #Fit model
+    # clf  = GaussianNB()
+    # clf.fit(X_data,y_labels)
+    # print(clf.predict([[5,5,5,5]]))
+    # print(clf.score(X_data,y_labels))
+    
     # @_DEPRECIATED
     # @property
     # def __summary__(self):
